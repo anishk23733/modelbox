@@ -4,9 +4,10 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import torch.onnx
 import torch
+from torch import nn
 
 class MNIST():
-    def __init__(self, batch_size=64, num_workers=4, device='cpu'):
+    def __init__(self, device='cpu'):
         self.device = device
 
         mnist_trainset = datasets.MNIST(root='./data', train=True, download=True, transform=None)
@@ -20,36 +21,33 @@ class MNIST():
 
     def set(self, model):
         self.model = model
-        model.to(self.device)
+        self.model.to(self.device)
 
     def test(self):
         print(self.model(self.x_train[0].flatten()))
     
-    def save(model, path):
-        torch.save(model.state_dict(), path)
+    def save(self, path):
+        torch.save(self.model.state_dict(), path)
 
-    def save_onnx(model, path, x_train):
-        torch.onnx.export(model, x_train[0].flatten(), path)
+    def save_onnx(self, path):
+        torch.onnx.export(self.model, self.x_train[0].flatten(), path)
 
-    def load(model, path):
-        model.load_state_dict(torch.load(path))
-        return model
+    def load(self, path):
+        self.model.load_state_dict(torch.load(path))
+        return self.model
 
-    def train(model, x_train, y_train):
+    def train(self, epochs=10, batch_size=32):
         # create a training loop
         loss_fn = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-        epochs = 10
-        batch_size = 32
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
         for epoch in range(epochs):
             total_loss = 0
-            for i in tqdm(range(0, len(x_train), batch_size)):
-                x = x_train[i:i+batch_size].view(-1, 784)
-                y = y_train[i:i+batch_size]
+            for i in tqdm(range(0, len(self.x_train), batch_size)):
+                x = self.x_train[i:i+batch_size].view(-1, 784)
+                y = self.y_train[i:i+batch_size]
 
-                y_pred = model(x)
+                y_pred = self.model(x)
                 loss = loss_fn(y_pred, y)
                 optimizer.zero_grad()
                 loss.backward()
@@ -59,16 +57,16 @@ class MNIST():
             
             print("Epoch: {}, Loss: {}".format(epoch, total_loss))
         
-        return model
+        return self.model
 
-    def eval(model, x_test, y_test):
-        model.eval()
+    def eval(self):
+        self.model.eval()
         # Evaluate the model on testing data
         with torch.no_grad():
-            x = x_test.view(-1, 784)
-            y = y_test
+            x = self.x_test.view(-1, 784)
+            y = self.y_test
 
-            y_pred = model(x)
+            y_pred = self.model(x)
             _, predicted = torch.max(y_pred.data, 1)
             total = y.size(0)
             correct = (predicted == y).sum().item()
@@ -76,6 +74,6 @@ class MNIST():
             print('Correct:', correct, "Total:", total)
             print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))
 
-    def show_image(x, i):
-        plt.imshow(x[i])
+    def show_image(self, i):
+        plt.imshow(self.x_train[i])
         plt.show()
