@@ -22,3 +22,9 @@ class Pyramid(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+    def test(self, x):
+        return self(self.transform(x))
+
+    def transform(self, x):
+        return x.view(-1, 28 * 28)

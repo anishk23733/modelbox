@@ -22,9 +22,6 @@ class MNIST():
     def set(self, model):
         self.model = model
         self.model.to(self.device)
-
-    def test(self):
-        print(self.model(self.x_train[0].flatten()))
     
     def save(self, path):
         torch.save(self.model.state_dict(), path)
@@ -44,7 +41,7 @@ class MNIST():
         for epoch in range(epochs):
             total_loss = 0
             for i in tqdm(range(0, len(self.x_train), batch_size)):
-                x = self.x_train[i:i+batch_size].view(-1, 784)
+                x = self.model.transform(self.x_train[i:i+batch_size])
                 y = self.y_train[i:i+batch_size]
 
                 y_pred = self.model(x)
@@ -63,7 +60,7 @@ class MNIST():
         self.model.eval()
         # Evaluate the model on testing data
         with torch.no_grad():
-            x = self.x_test.view(-1, 784)
+            x = self.model.transform(self.x_test)
             y = self.y_test
 
             y_pred = self.model(x)
